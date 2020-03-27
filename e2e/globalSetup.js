@@ -1,3 +1,4 @@
+const { MongoMemoryServer } = require('mongodb-memory-server');
 const path = require('path');
 const { spawn } = require('child_process');
 const nodeFetch = require('node-fetch');
@@ -109,45 +110,53 @@ module.exports = () => new Promise((resolve, reject) => {
     return resolve();
   }
 
-  // TODO: Configurar DB de tests
+  // TODO: Configurar DB de tests __________________________________________
+  const mongoMemory = new MongoMemoryServer();
+  mongoMemory.getConnectionString()
+    .then((mongoUrl) => {
+      // process.env, devuelve un objeto que contiene el entorno del usuario.*
+      process.env.DB_URL = mongoUrl;
+      console.info('Mongo Memory Server run', mongoUrl); // console, a la url Conneccion Randon de MemoryServer.*
 
-  console.info('Staring local server...');
-  const child = spawn('npm', ['start', process.env.PORT || 8888], {
-    cwd: path.resolve(__dirname, '../'),
-    stdio: ['ignore', 'pipe', 'pipe'],
-  });
+      console.info('Staring local server...');
+      const child = spawn('npm', ['start', process.env.PORT || 8888], {
+        cwd: path.resolve(__dirname, '../'),
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
 
-  Object.assign(__e2e, { childProcessPid: child.pid });
+      Object.assign(__e2e, { childProcessPid: child.pid });
 
-  child.stdout.on('data', (chunk) => {
-    console.info(`\x1b[34m${chunk.toString()}\x1b[0m`);
-  });
+      child.stdout.on('data', (chunk) => {
+        console.info(`\x1b[34m${chunk.toString()}\x1b[0m`);
+      });
 
-  child.stderr.on('data', (chunk) => {
-    const str = chunk.toString();
-    if (/DeprecationWarning/.test(str)) {
-      return;
-    }
-    console.error('child::stderr', str);
-  });
+      child.stderr.on('data', (chunk) => {
+        const str = chunk.toString();
+        if (/DeprecationWarning/.test(str)) {
+          return;
+        }
+        console.error('child::stderr', str);
+      });
 
-  process.on('uncaughtException', (err) => {
-    console.error('UncaughtException!');
-    console.error(err);
-    kill(child.pid, 'SIGKILL', () => process.exit(1));
-  });
+      process.on('uncaughtException', (err) => {
+        console.error('UncaughtException!');
+        console.error(err);
+        kill(child.pid, 'SIGKILL', () => process.exit(1));
+      });
 
-  waitForServerToBeReady()
-    .then(checkAdminCredentials)
-    .then(createTestUser)
-    .then(resolve)
-    .catch((err) => {
-      kill(child.pid, 'SIGKILL', () => reject(err));
+      waitForServerToBeReady()
+        .then(checkAdminCredentials)
+        .then(createTestUser)
+        .then(resolve)
+        .catch((err) => {
+          kill(child.pid, 'SIGKILL', () => reject(err));
+        });
     });
 });
 
 // Export globals - ugly... :-(
 global.__e2e = __e2e;
+console.log(global.__e2e);
 
 // Export stuff to be used in tests!
 process.baseUrl = baseUrl;
