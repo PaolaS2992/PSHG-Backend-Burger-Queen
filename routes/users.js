@@ -2,7 +2,6 @@ const bcrypt = require('bcrypt');
 const collection = require('../connection/collection');
 
 const {
-  requireAuth,
   requireAdmin,
   requireAdminOrUser,
 } = require('../middleware/auth');
