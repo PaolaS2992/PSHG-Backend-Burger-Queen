@@ -49,7 +49,7 @@ describe('POST /orders', () => {
       })
       .then((json) => {
         expect(typeof json._id).toBe('string');
-        expect(json.client).toBe('client');
+        expect(typeof json.client).toBe('string');
         expect(typeof json.dateEntry).toBe('string');
         expect(Array.isArray(json.products)).toBe(true);
         expect(json.products.length).toBe(1);
